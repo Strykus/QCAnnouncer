@@ -1,0 +1,7 @@
+{
+	"Name" : "Quake Champions Announcer",
+	"Description" : "Adds the Quake Champions Announcer into your game",
+	"Version": "0.8.0",
+	"LoadPriority": 4,
+
+}

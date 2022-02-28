@@ -1,0 +1,2240 @@
+untyped
+
+
+
+//int legacy=0
+
+
+
+int announcer=1
+
+int killstreak=0
+int killingspree=0
+int titanstreak=0
+
+int blitz1=0
+int blitz1earn=0
+int blitz2=0
+int blitz2earn=0
+int blitz3=0
+int blitz3earn=0
+int blitz4=0
+int blitz4earn=0
+
+int pilotstreak=0
+int assaultstreak=0
+int smgstreak=0
+int sniperstreak=0
+int shotgunstreak=0
+int lmgstreak=0
+int stickystreak=0
+int starstreak=0
+int laserstreak=0
+int coldstreak=0
+int explosivestreak=0
+int sidearmstreak=0
+int fragstreak=0
+int electricstreak=0
+int meleestreak=0
+int zombiestreak=0
+int survivorstreak=0
+int executionstreak=0
+int pancake=0
+
+int headshot=0
+int assist=0
+int infantry=0
+int mvpkill=0
+
+int medalcallactive=0
+int medalthreadqueue=0
+int queuesuicide=0
+int queuedeathstreak=0
+int deathtipscheck=0
+
+int timedKillstreak=0
+int KillTimeTracker=0
+
+
+int collatamount=0
+int clusterluck=0
+int annihilation=0
+int armageddon=0
+int assassination=0
+int graveActive=0
+int grave=0
+
+int death=1
+
+// Medal Registration [AKA HELL]
+
+int killstreak2=0
+int killstreak3=0
+int killstreak4=0
+int killstreak5=0
+int killstreak6=0
+int killstreak7=0
+int killstreak8=0
+int killstreak9=0
+int killstreak10=0
+int killstreak20=0
+int killstreak30=0
+int killingspree3=0
+int killingspree5=0
+int killingspree10=0
+int killingspree12=0
+int killingspree15=0
+int killingspree18=0
+int killingspree20=0
+int killingspree30=0
+int pilotstreak5=0
+int pilotstreak10=0
+int pilotstreak15=0
+int assaultstreak3=0
+int assaultstreak6=0
+int assaultstreak9=0
+int smgstreak3=0
+int smgstreak6=0
+int smgstreak9=0
+int sniperstreak3=0
+int sniperstreak5=0
+int sniperstreak10=0
+int shotgunstreak3=0
+int shotgunstreak6=0
+int shotgunstreak10=0
+int lmgstreak3=0
+int lmgstreak6=0
+int lmgstreak9=0
+int stickystreak3=0
+int stickystreak6=0
+int stickystreak9=0
+int starstreak10=0
+int laserstreak3=0
+int laserstreak6=0
+int laserstreak9=0
+int coldstreak=0
+int explosivestreak3=0
+int explosivestreak6=0
+int explosivestreak10=0
+int sidearmstreak3=0
+int sidearmstreak6=0
+int sidearmstreak9=0
+int fragstreak3=0
+int electricstreak3=0
+int pancake5=0
+int meleestreak1=0
+int meleestreak3=0
+int meleestreak6=0
+int meleestreak9=0
+int zombiestreak3=0
+int zombiestreak6=0
+int zombiestreak9=0
+int survivorstreak5=0
+int survivorstreak10=0
+int survivorstreak15=0
+int executionstreak3=0
+int death3=0
+int death5=0
+int titanstreak2=0
+int titanstreak3=0
+int titanstreak4=0
+int titanstreak5=0
+
+int assiststreak3=0
+int assiststreak6=0
+int assiststreak9=0
+int infantrystreak10=0
+int infantrystreak20=0
+int infantrystreak30=0
+int headshotstreak3=0
+int headshotstreak6=0
+int headshotstreak9=0
+int firststrike=0
+int revenge=0
+int mvpkill3=0
+int batterystolen=0
+
+int perfectioncheck=1
+int infection=0
+
+global function ClObituary_Init
+
+global function Obituary_Print
+global function Obituary_Print_Generic
+global function Obituary
+global function Obituary_GetEntityInfo
+global function Obituary_Print_Localized
+global function Obituary_SetEnabled
+global function Obituary_SetIndexOffset
+
+global function ServerCallback_SquadLeaderBonus
+global function ServerCallback_SquadLeaderDoubleXP
+
+const NUM_OBITUARY_LINES = 4		// cant change arbitrarily, need to have matching entries in the .res file
+const obituaryTextBoxWidth = 500
+const obituaryTextBoxHeight = 20
+const defaultCharacterWidth = 5
+
+struct ObituaryData
+{
+	float startTime
+	var	rui
+}
+
+
+
+struct
+{
+	array<ObituaryData>		obituaryQueue = []
+	bool obituariesEnabled = true
+	int indexOffest = 0
+} file
+
+struct ObitEntityInfo
+{
+	string displayName = ""
+	vector displayColor = OBITUARY_COLOR_WEAPON
+	string petDisplayName = ""
+}
+
+global struct ObitStringData
+{
+	string attackerName = ""
+	string attackerPetName = ""
+	string victimName = ""
+	string victimPetName = ""
+	string weaponLocalizedName = ""
+	string attackerLocalizedString = "#OBIT_PLAYER_STRING"
+	string victimLocalizedString = "#OBIT_PLAYER_STRING"
+	string weaponLocalizedString = "#OBIT_BRACKETED_STRING"
+}
+
+function ClObituary_Init()
+{
+	
+	thread deathtipsChecker()
+}
+
+void function EntitiesDidLoad()
+{
+}
+
+void function ServerCallback_SquadLeaderBonus( int playerEHandle )
+{
+	entity pilot = GetEntityFromEncodedEHandle( playerEHandle )
+
+	if ( !IsValid( pilot ) )
+		return
+
+	if ( !pilot.IsPlayer() )
+		return
+
+	if ( pilot == GetLocalClientPlayer() )
+		Obituary_Print_Generic( "#OBIT_SQUAD_LEADER_BONUS_YOU", pilot.GetPlayerName(), TEAM_COLOR_FRIENDLY, <255, 255, 255> )
+	else
+		Obituary_Print_Generic( "#OBIT_SQUAD_LEADER_BONUS", pilot.GetPlayerName(), TEAM_COLOR_FRIENDLY, <255, 255, 255> )
+}
+
+void function ServerCallback_SquadLeaderDoubleXP()
+{
+	AnnouncementData announcement = Announcement_Create( "#SQUAD_LEADER_BONUS_ANNOUNCE" )
+	bool displayNow = InitializeAnnouncement_ShouldDisplayNow( announcement, "#SQUAD_LEADER_BONUS_ANNOUNCE", "#SQUAD_LEADER_BONUS_ANNOUNCE_DESC", TEAM_COLOR_YOU )
+	announcement.announcementStyle = ANNOUNCEMENT_STYLE_SWEEP
+	announcement.icon = $"rui/menu/common/dbl_xp_icon"
+	announcement.iconAspect = <1, 1, 0>
+	announcement.soundAlias = SFX_HUD_ANNOUNCE_QUICK
+	announcement.duration = 4.0
+
+	if ( displayNow )
+		thread AnnouncementMessage_Display( GetLocalClientPlayer(), announcement )
+}
+
+ObitEntityInfo function Obituary_GetEntityInfo( entity ent, bool victimIsOwnedTitan = false, damageSourceId = null )
+{
+	ObitEntityInfo info
+
+	if ( IsValid( ent ) )
+	{
+		AttackerDisplayNameStruct names = GetAttackerDisplayNamesFromClassname( ent, victimIsOwnedTitan )
+		info.displayName = names.attackerName
+		info.petDisplayName = names.attackerPetName
+
+		entity localPlayer = GetLocalClientPlayer()
+
+		info.displayColor = localPlayer.GetTeam() == ent.GetTeam() ? OBITUARY_COLOR_FRIENDLY : OBITUARY_COLOR_ENEMY
+
+		if ( !IsWatchingReplay() )
+		{
+			local entBoss = ent.GetBossPlayer()
+			if ( !IsPrivateMatch() && ((ent.IsPlayer() && IsPartyMember( ent )) || ((entBoss != null) && IsPartyMember( entBoss ))) )
+				info.displayColor = OBITUARY_COLOR_PARTY
+
+			if ( ent == localPlayer )
+				info.displayColor = OBITUARY_COLOR_LOCALPLAYER
+			else if ( !ent.IsPlayer() && (entBoss == localPlayer) )
+				info.displayColor = OBITUARY_COLOR_LOCALPLAYER
+		}
+	}
+	else if ( damageSourceId != null )
+	{
+		string name = GetAttackerDisplayNamesDamageSourceId( damageSourceId )
+		info.displayColor = OBITUARY_COLOR_ENEMY // Since we can't know if it's an enemy of friendly lets assume enemy.
+		info.displayName = name
+	}
+
+	return info
+}
+
+function Obituary( entity attacker, string attackerClass, entity victim, int scriptDamageType, int damageSourceId, bool isHeadShot, bool victimIsOwnedTitan = false, bool forceDisplay = false )
+{
+	thread aliasRegisterObit()
+	
+	//check if a round had ended previously
+	if(GetConVarInt("sp_deathtips_tip1") >= 99)
+	{
+		death=0
+		thread deathstreak()
+	}
+	
+	if(deathtipscheck==0)
+		//thread deathtipsChecker()
+	
+	if ( IsSingleplayer() )
+		return
+
+	if ( GetConVarInt( "hud_setting_showObituary" ) == 0 )
+		return
+
+	if ( !forceDisplay )
+	{
+		if ( victim.IsPlayer() )
+		{
+			// Players
+			if ( !OBITUARY_ENABLED_PLAYERS )
+				return
+		}
+		else if ( victim.IsTitan() )
+		{
+			// NPC Titans
+			if ( !OBITUARY_ENABLED_NPC_TITANS )
+				return
+		}
+		else
+		{
+			// NPC
+			if ( !OBITUARY_ENABLED_NPC )
+				return
+		}
+	}
+
+	if ( damageSourceId == eDamageSourceId.round_end )
+		return
+
+	/*******************************************/
+	/* GET INFORMATION ABOUT ENTITIES INVOLVED */
+	/*******************************************/
+
+	ObitEntityInfo attackerInfo = Obituary_GetEntityInfo( attacker, false, damageSourceId )
+	ObitEntityInfo victimInfo = Obituary_GetEntityInfo( victim, victimIsOwnedTitan, damageSourceId )
+	bool isDeathSuicide = IsSuicide( attacker, victim, damageSourceId )
+
+	// Don't show NPC suicides, also makes titan eject deaths not show up which is good
+	if ( isDeathSuicide && victim.IsNPC() )
+		return
+
+	string sourceDisplayName = ""
+	//if ( isDeathSuicide )
+	//	damageSourceId = damagedef_suicide
+
+	//sourceDisplayName = DamageDef_GetObituary( damageSourceId ) <- replace with this when all damageSourceIds are converted
+
+	sourceDisplayName = GetObitFromDamageSourceID( damageSourceId )
+
+	/********************************************/
+	/* PRINT DEBUG INFO IF SOMETHING GOES WRONG */
+	/********************************************/
+
+	bool printDebugInfo = false
+	local debugSourceDisplayName = sourceDisplayName
+
+	if ( sourceDisplayName == "" )
+	{
+		debugSourceDisplayName = GetObitFromDamageSourceID( eDamageSourceId.damagedef_unknownBugIt )
+		printDebugInfo = true
+	}
+
+	if ( attackerInfo.displayName == "" )
+	{
+		printDebugInfo = true
+	}
+
+	if ( victimInfo.displayName == "" )
+	{
+		printDebugInfo = true
+	}
+
+	if ( printDebugInfo )
+	{
+		printt( "------------------------------------------" )
+		printt( " FULL OBITUARY INFO COULD NOT BE RESOLVED " )
+		printt( "    attacker:", attacker )
+		if ( IsValid( attacker ) )
+		{
+			printt( "    attacker classname:", attacker.GetClassName() )
+			local attackerOwner = attacker.GetOwner()
+			printt( "    attackerOwner:", attackerOwner )
+			if ( IsValid( attackerOwner ) )
+				printt( "    attackerOwner classname:", attackerOwner.GetClassName() )
+		}
+		printt( "    victim:", victim )
+		if ( IsValid( victim ) )
+		{
+			printt( "    victim classname:", victim.GetClassName() )
+			local victimOwner = victim.GetOwner()
+			printt( "    victimOwner:", victimOwner )
+			if ( IsValid( victimOwner ) )
+				printt( "    victimOwner classname:", victimOwner.GetClassName() )
+		}
+		printt( "    scriptDamageType:", scriptDamageType )
+		printt( "    damageSourceId:", damageSourceId )
+		printt( "    sourceDisplayName:", debugSourceDisplayName )
+		printt( "------------------------------------------" )
+	}
+
+	/**************************/
+	/* PRINT THE OBIT MESSAGE */
+	/**************************/
+
+	if ( isDeathSuicide )
+	{
+		attackerInfo.displayName = ""
+		attackerInfo.displayColor = victimInfo.displayColor
+	}
+
+	local weaponIcon = null
+	if ( isHeadShot )
+		weaponIcon = $"vgui/HUD/obituary_headshot"
+
+	vector obitColor
+	if ( scriptDamageType & DF_BURN_CARD_WEAPON )
+		obitColor = OBITUARY_COLOR_BURN_WEAPON
+	else
+		obitColor = OBITUARY_COLOR_WEAPON
+
+	string attackerString
+	string weaponString
+	string victimString
+	
+	//killsound
+   	if(attacker == GetLocalClientPlayer() && victim != GetLocalClientPlayer() && victimInfo.petDisplayName == "" )
+  	{	
+		
+		//check if user has a killsound
+		GetLocalClientPlayer().ClientCommand("playvideo killsound 1 1")
+		
+		//announcer killstreaks
+		killingspree+=1
+		//GetLocalClientPlayer().ClientCommand("killstreak"+killstreak+"_"+announcer)
+		
+		blitz1+=1
+		thread blitz1Check()
+		blitz2+=1
+		thread blitz2Check()
+		blitz3+=1
+		thread blitz3Check()
+		blitz4+=1
+		thread blitz4Check()
+		
+		if(blitz1 >= 5 && blitz1earn==0)
+			blitz1earn=1
+		if(blitz2 >= 10 && blitz2earn==0)
+			blitz2earn=1
+		if(blitz3 >= 15 && blitz3earn==0)
+			blitz3earn=1
+		if(blitz4 >= 20 && blitz4earn==0)
+			blitz4earn=1
+		
+		
+		//collat check
+		if(sourceDisplayName=="Kraber" || sourceDisplayName=="DMR" || sourceDisplayName=="Charge Rifle" || sourceDisplayName=="Wingman Elite")
+		{
+			collatamount+=1
+			thread collatCheck()
+		}
+		//cluster check
+		if(sourceDisplayName=="Cluster Missile")
+		{
+			clusterluck+=1
+			thread clusterCheck()
+			
+			if(clusterluck >= 3 && clusterluck != 99)
+			{
+				clusterluck=99
+				if(medalcallactive==0)
+					thread medalCall()
+				else
+					medalthreadqueue=1
+			}
+		}
+		//annihilation check
+		if(sourceDisplayName=="EPG" || sourceDisplayName=="Softball" || sourceDisplayName=="Cold War" || sourceDisplayName=="Frag Grenade" || sourceDisplayName=="Satchel")
+		{
+			annihilation+=1
+			thread annihilationCheck()
+		}
+		// nuke check
+		if(sourceDisplayName=="#DEATH_NUCLEAR_CORE")
+		{	
+			armageddon+=1
+			thread armageddonCheck()
+			
+			if(armageddon >= 3 && armageddon != 99)
+			{
+				armageddon=99
+				if(medalcallactive==0)
+					thread medalCall()
+				else
+					medalthreadqueue=1
+			}
+		}
+		//grave check
+		if(grave==1)
+		{
+			grave=99
+		
+			if(medalcallactive==0)
+				thread medalCall()
+			else
+				medalthreadqueue=1
+			
+		}
+		
+		
+		//HALO KILLSTREAKS
+		
+		//Titan-Pilot Streak | AKA A Pain in The Ass
+		if(sourceDisplayName=="Splitter Rifle" || sourceDisplayName=="T-203 Thermite Launcher" || sourceDisplayName=="Plasma Railgun" || sourceDisplayName=="Leadwall" || sourceDisplayName=="40mm Tracker Cannon" || sourceDisplayName=="Predator Cannon" || sourceDisplayName=="XO-16" || sourceDisplayName=="Titan Melee" || sourceDisplayName=="#DEATH_STEPPED_ON")
+		{
+			pilotstreak+=1
+			//GetLocalClientPlayer().ClientCommand("pilotstreak"+pilotstreak+"_"+announcer)
+		}
+		
+		//Assault Streak
+		if(sourceDisplayName=="R-201" || sourceDisplayName=="R-101" || sourceDisplayName=="Hemlok" || sourceDisplayName=="G2" || sourceDisplayName=="Flatline")
+		{
+			assaultstreak+=1
+			//GetLocalClientPlayer().ClientCommand("assaultstreak"+assaultstreak+"_"+announcer)
+		}
+		
+		//SMG Streak
+		if(sourceDisplayName=="CAR" || sourceDisplayName=="Alternator" || sourceDisplayName=="Volt" || sourceDisplayName=="R-97")
+		{
+			smgstreak+=1
+			//GetLocalClientPlayer().ClientCommand("smgstreak"+smgstreak+"_"+announcer)
+		}
+		
+		//Sniper Streak
+		if(sourceDisplayName=="Kraber" || sourceDisplayName=="DMR" || sourceDisplayName=="Double Take")
+		{
+			sniperstreak+=1
+			//GetLocalClientPlayer().ClientCommand("sniperstreak"+sniperstreak+"_"+announcer)
+		}
+		
+		//Shotgun Streak
+		if(sourceDisplayName=="EVA-8 Авто" || sourceDisplayName=="Mastiff" || sourceDisplayName=="Mozambique")
+		{
+			shotgunstreak+=1
+			//GetLocalClientPlayer().ClientCommand("shotgunstreak"+shotgunstreak+"_"+announcer)
+		}
+		
+		//LMG Streak
+		if(sourceDisplayName=="Spitfire" || sourceDisplayName=="Devotion")
+		{
+			lmgstreak+=1
+			//GetLocalClientPlayer().ClientCommand("lmgstreak"+lmgstreak+"_"+announcer)
+		}
+		
+		//Sticky Streak
+		if(sourceDisplayName=="Softball" || sourceDisplayName=="Firestar" || sourceDisplayName=="Satchel" || sourceDisplayName=="MGL")
+		{
+			stickystreak+=1
+			//GetLocalClientPlayer().ClientCommand("stickystreak"+stickystreak+"_"+announcer)
+		}
+		
+		//STAR Streak
+		if(sourceDisplayName=="L-STAR")
+		{
+			starstreak+=1
+			//GetLocalClientPlayer().ClientCommand("starstreak"+starstreak+"_"+announcer)
+		}
+		
+		//Laser Streak
+		if(sourceDisplayName=="Charge Rifle" || sourceDisplayName=="L-STAR" || sourceDisplayName=="Laser Shot")
+		{
+			laserstreak+=1
+			//GetLocalClientPlayer().ClientCommand("laserstreak"+laserstreak+"_"+announcer)
+		}
+		
+		//Explosive Streak
+		if(sourceDisplayName=="SMR" || sourceDisplayName=="EPG" || sourceDisplayName=="Archer")
+		{
+			explosivestreak+=1
+			//GetLocalClientPlayer().ClientCommand("explosivestreak"+explosivestreak+"_"+announcer)
+		}
+		
+       //Cold Streak
+        if(sourceDisplayName=="Cold War")
+        {
+            coldstreak+=1
+            //GetLocalClientPlayer().ClientCommand("coldstreak"+coldstreak+"_"+announcer)
+        }
+		
+		//Sidearm Streak
+		if(sourceDisplayName=="Wingman Elite" || sourceDisplayName=="Wingman" || sourceDisplayName=="RE-45 Auto" || sourceDisplayName=="P2016")
+		{
+			sidearmstreak+=1
+			//GetLocalClientPlayer().ClientCommand("sidearmstreak"+sidearmstreak+"_"+announcer)
+		}
+		
+		//Melee Streak
+		if(sourceDisplayName=="Melee" && infection==0)
+		{
+			meleestreak+=1
+			//GetLocalClientPlayer().ClientCommand("meleestreak"+meleestreak+"_"+announcer)
+		}
+		
+		//Zombie Streak
+		if(infection==1 && (sourceDisplayName=="Melee" || sourceDisplayName=="MGL"))
+		{
+			zombiestreak+=1
+			//GetLocalClientPlayer().ClientCommand("zombiestreak"+zombiestreak+"_"+announcer)
+		}
+		
+		//Survivor Streak
+		if(infection==1 && sourceDisplayName!="Melee" && sourceDisplayName!="MGL")
+		{
+			survivorstreak+=1
+			//GetLocalClientPlayer().ClientCommand("survivorstreak"+survivorstreak+"_"+announcer)
+		}
+		
+		//Short Streaks
+		if(sourceDisplayName=="Frag Grenade")
+		{
+			fragstreak+=1
+			//GetLocalClientPlayer().ClientCommand("fragstreak"+fragstreak+"_"+announcer)
+		}
+		if(sourceDisplayName=="Arc Grenade" || sourceDisplayName=="Electric Smoke" || sourceDisplayName=="Thunderbolt" || sourceDisplayName=="Arc Wave")
+		{
+			electricstreak+=1
+			//GetLocalClientPlayer().ClientCommand("electricstreak"+electricstreak+"_"+announcer)
+		}
+		if(sourceDisplayName=="#DEATH_HUMAN_EXECUTION")
+			assassination=1
+		
+		if(sourceDisplayName=="#DEATH_HUMAN_EXECUTION" || sourceDisplayName=="#DEATH_TITAN_EXECUTION")
+		{
+			executionstreak+=1
+			//GetLocalClientPlayer().ClientCommand("executionstreak"+executionstreak+"_"+announcer)
+		}
+		if(sourceDisplayName=="#DEATH_STEPPED_ON")
+		{
+			pancake+=1
+		}
+		
+		//thread timedKillstreak
+		if ( timedKillstreak != 0 )
+		{
+			HaloAnnouncer( timedKillstreak, KillTimeTracker, (Time()).tointeger() )
+		}
+		else
+		{
+			KillTimeTracker = (Time()).tointeger()
+			timedKillstreak++
+		}
+		
+		if(medalcallactive==0)
+			thread medalCall()
+		else
+			medalthreadqueue=1
+  	}
+	
+	//deathsound
+	if(victim == GetLocalClientPlayer())
+	{
+		
+		death+=1
+		grave=1
+		thread graveCheck()
+		
+		if ( isDeathSuicide && death!=4 && death!=6 )
+		{
+			GetLocalClientPlayer().ClientCommand("playvideo suicide 1 1")
+			/*if(medalcallactive == 0)
+				thread suicide()
+			else
+				queuesuicide=1
+			*/
+		}
+		
+		// To avoid crashing, deathstreak/suicide need to be in their own functions
+		// To ensure it's played, the queue variable will turn to 1 if MedalCall is active,
+		// so that it will still run if it's over.
+		
+		if(medalcallactive == 0)
+			thread deathstreak()
+		else
+			queuedeathstreak=1
+		
+		
+		/*if(medalcallactive==0)
+			thread medalCall()
+		else
+			medalthreadqueue=1*/
+	}
+	//titanstreak
+	if(attacker == GetLocalClientPlayer() && victim != GetLocalClientPlayer() && victimInfo.petDisplayName != "" )
+	{
+		titanstreak+=1
+		GetLocalClientPlayer().ClientCommand("titanstreak"+titanstreak+"_"+announcer)
+		
+		if(medalcallactive==0)
+			thread medalCall()
+		else
+			medalthreadqueue=1
+	}
+	
+
+	if ( attackerInfo.petDisplayName != "" )
+	{
+		attackerString = Localize( "#OBIT_PLAYER_CONTROLLED_AI_STRING", attackerInfo.displayName, Localize( attackerInfo.petDisplayName ) )
+	}
+	else
+	{
+		attackerString = Localize( "#OBIT_PLAYER_STRING", attackerInfo.displayName )
+	}
+
+	if ( victimInfo.petDisplayName != "" )
+	{
+		victimString = Localize( "#OBIT_PLAYER_CONTROLLED_AI_STRING", victimInfo.displayName, Localize( victimInfo.petDisplayName ) )
+	}
+	else
+	{
+		victimString = Localize( "#OBIT_PLAYER_STRING", victimInfo.displayName )
+	}
+	
+	
+	
+
+	string localizedObit = Localize( "#OBIT_ENT_WEAPON_ENT", attackerString, Localize( sourceDisplayName ), victimString )
+
+	bool displayBackground = attacker == GetLocalClientPlayer() || victim == GetLocalClientPlayer()
+
+	float backgroundAlpha = (attacker == GetLocalClientPlayer() || victim == GetLocalClientPlayer()) ? 0.5 : 0.0
+	vector backgroundColor = <0, 0, 0>
+	//bool displayBackground = false
+
+	//if ( attacker.IsPlayer() )
+	//	attackerInfo.displayColor = <255, 255, 255>
+	//else if ( victim.IsPlayer() )
+	//	attackerInfo.displayColor = <255, 255, 255>
+	//
+	Obituary_Print_Localized( localizedObit, attackerInfo.displayColor, victimInfo.displayColor, <255, 255, 255>, backgroundColor, backgroundAlpha )
+}
+
+/*function timedKillstreak()
+{
+	currentkillstreak=killstreak
+	wait 5
+	if(killstreak==currentkillstreak)
+		killstreak=0
+}*/
+void function HaloAnnouncer( int Kills, int LastTime, int CurrTime )
+{
+	if ( (CurrTime - LastTime) < 6 )
+	{
+		timedKillstreak++
+		switch ( timedKillstreak )
+		{
+			case 1:
+				killstreak=1
+				death=0
+				death3=0
+				death5=0
+				break
+			case 2:
+				killstreak=2
+				break
+			case 3:
+				killstreak=3
+				break
+			case 4:
+				killstreak=4
+				break
+			case 5:
+				killstreak=5
+				break
+			case 6:
+				killstreak=6
+				break
+			case 7:
+				killstreak=7
+				break
+			case 8:
+				killstreak=8
+				break
+			case 9:
+				killstreak=9
+				break
+			case 10:
+				killstreak=10
+				break
+			case 20:
+				killstreak=20
+				break
+			case 30:
+				killstreak=30
+				break
+			default:
+				break
+		}
+		KillTimeTracker = CurrTime
+	}
+	else
+	{
+		KillTimeTracker = (Time()).tointeger()
+		timedKillstreak = 1
+		killstreak=0
+		killstreak2=0
+		killstreak3=0
+		killstreak4=0
+		killstreak5=0
+		killstreak6=0
+		killstreak7=0
+		killstreak8=0
+		killstreak9=0
+		killstreak10=0
+		killstreak20=0
+		killstreak30=0
+		
+	}
+}
+
+void function blitz1Check()
+{
+	wait 20
+	if(blitz1>0)
+		blitz1 -= 1
+}
+
+void function blitz2Check()
+{
+	wait 40
+	if(blitz2>0)
+		blitz2 -= 1
+}
+
+void function blitz3Check()
+{
+	wait 60
+	if(blitz3>0)
+		blitz3 -= 1
+}
+
+void function blitz4Check()
+{
+	wait 80
+	if(blitz4>0)
+		blitz4 -= 1
+}
+
+// Medal Call
+// 
+// medalcallactive ensures this thread does not run multiple times at once, which would defeat the purpose of queuing in the first place
+// medalthreadqueue sets the thread to run again if any medals were earned but couldn't play due to the function passing it up
+//
+// Unfortunately, because we aren't letting this thread run multiple times at once, if you for example get a kill while the killstreak variable is 4,
+// it will become 5 and nothing will play, despite the fact that you should be getting an Overkill. Because of this, I'll have to make separate if statements
+// and variables for each individual medal, to ensure increments before the medal gets to play will not break the counter.
+//
+// On the plus side, this means I can make specific wait timers for every voiceline, so that longer ones won't get cut off and shorter ones can end quicker.
+//
+// I am deeply sorry for the long and atrocious code :)
+// But hey, it works. I think.
+
+void function medalCall()
+{
+	WaitFrame()
+	medalcallactive = 1
+	
+	//Base Killstreak
+	if(killstreak >= 2 && killstreak2 == 0) 
+	{
+		killstreak2=1
+		death=0
+		death3=0
+		death5=0
+		
+		GetLocalClientPlayer().ClientCommand("playvideo killstreak2_1 1 1; playvideo videokillstreak2 100 100; playvideo popup 1 1")
+		wait 1.3
+	}
+	if(killstreak >= 3 && killstreak3 == 0) 
+	{
+		killstreak3=1
+		GetLocalClientPlayer().ClientCommand("playvideo killstreak3_1 1 1; playvideo videokillstreak3 100 100; playvideo popup 1 1")
+		wait 1.25
+	}
+	if(killstreak >= 4 && killstreak4 == 0) 
+	{
+		killstreak4=1
+		GetLocalClientPlayer().ClientCommand("playvideo killstreak4_1 1 1; playvideo videokillstreak4 100 100; playvideo popup2 1 1")
+		wait 1.3
+	}
+	if(killstreak >= 5 && killstreak5 == 0)
+	{
+		killstreak5=1
+		GetLocalClientPlayer().ClientCommand("playvideo killstreak5_1 1 1; playvideo videokillstreak5 100 100; playvideo popup2 1 1")
+		wait 1.8
+	}
+	if(killstreak >= 6 && killstreak6 == 0)
+	{
+		killstreak6=1
+		GetLocalClientPlayer().ClientCommand("playvideo killstreak6_1 1 1; playvideo videokillstreak6 100 100; playvideo popup3 1 1")
+		wait 1.6
+	}
+	if(killstreak >= 7 && killstreak7 == 0)
+	{
+		killstreak7=1
+		GetLocalClientPlayer().ClientCommand("playvideo killstreak7_1 1 1; playvideo videokillstreak7 100 100; playvideo popup3 1 1")
+		wait 1.8
+	}
+	if(killstreak >= 8 && killstreak8 == 0)
+	{
+		killstreak8=1
+		GetLocalClientPlayer().ClientCommand("playvideo killstreak8_1 1 1; playvideo videokillstreak8 100 100; playvideo popup4 1 1")
+		wait 2
+	}
+	if(killstreak >= 9 && killstreak9 == 0)
+	{
+		killstreak9=1
+		GetLocalClientPlayer().ClientCommand("playvideo killstreak9_1 1 1; playvideo videokillstreak9 100 100; playvideo popup4 1 1")
+		wait 1.75
+	}
+	if(killstreak >= 10 && killstreak10 == 0)
+	{
+		killstreak10=1
+		GetLocalClientPlayer().ClientCommand("playvideo killstreak10_1 1 1; playvideo videokillstreak10 100 100; playvideo popup5 1 1")
+		wait 1.4
+	}
+	if(killstreak >= 20 && killstreak20 == 0)
+	{
+		killstreak20=1
+		GetLocalClientPlayer().ClientCommand("playvideo killstreak20_1 1 1; playvideo videokillstreak20 100 100; playvideo popup5 1 1")
+		wait 1.4
+	}
+		if(killstreak >= 30 && killstreak30 == 0)
+	{
+		killstreak30=1
+		GetLocalClientPlayer().ClientCommand("playvideo killstreak30_1 1 1; playvideo videokillstreak30 100 100; playvideo popup5 1 1")
+		wait 1.4
+	}
+	
+	//Blitz
+	if(blitz1earn==1)
+	{
+		GetLocalClientPlayer().ClientCommand("playvideo blitz5 1 1; playvideo videoblitz5 100 100; playvideo popup2 1 1")
+		blitz1earn=2
+		wait 1.5
+	}
+	if(blitz2earn==1)
+	{
+		GetLocalClientPlayer().ClientCommand("playvideo blitz10 1 1; playvideo videoblitz10 100 100; playvideo popup3 1 1")
+		blitz2earn=2
+		wait 1.65
+	}
+	if(blitz3earn==1)
+	{
+		GetLocalClientPlayer().ClientCommand("playvideo blitz15 1 1; playvideo videoblitz15 100 100; playvideo popup4 1 1")
+		blitz3earn=2
+		wait 2
+	}
+	if(blitz4earn==1)
+	{
+		GetLocalClientPlayer().ClientCommand("playvideo blitz20 1 1; playvideo videoblitz20 100 100; playvideo popup5 1 1")
+		blitz4earn=2
+		wait 2
+	}
+	
+	//Killing Spree
+	if(killingspree >= 3 && killingspree3 == 0)
+	{
+		killingspree3=1
+		death=0
+		death3=0
+		death5=0
+		
+		GetLocalClientPlayer().ClientCommand("playvideo killingspree3_1 1 1; playvideo videokillingspree3 100 100; playvideo popup 1 1")
+		wait 1.25
+	}
+	if(killingspree >= 5 && killingspree5 == 0)
+	{
+		killingspree5=1
+		GetLocalClientPlayer().ClientCommand("playvideo killingspree5_1 1 1; playvideo videokillingspree5 100 100; playvideo popup2 1 1")
+		wait 1.5
+	}
+	if(killingspree >= 10 && killingspree10 == 0)
+	{
+		killingspree10=1
+		GetLocalClientPlayer().ClientCommand("playvideo killingspree10_1 1 1; playvideo videokillingspree10 100 100; playvideo popup2 1 1")
+		wait 1.5
+	}
+	if(killingspree >= 12 && killingspree12 == 0)
+	{
+		killingspree12=1
+		GetLocalClientPlayer().ClientCommand("playvideo killingspree12_1 1 1; playvideo videokillingspree12 100 100; playvideo popup3 1 1")
+		wait 1.6
+	}
+	if(killingspree >= 15 && killingspree15 == 0)
+	{
+		killingspree15=1
+		GetLocalClientPlayer().ClientCommand("playvideo killingspree15_1 1 1; playvideo videokillingspree15 100 100; playvideo popup3 1 1")
+		wait 1.6
+		
+		if(perfectioncheck==1)
+			perfectioncheck=2
+		
+	}
+	if(killingspree >= 18 && killingspree18 == 0)
+	{
+		killingspree18=1
+		GetLocalClientPlayer().ClientCommand("playvideo killingspree18_1 1 1; playvideo videokillingspree18 100 100; playvideo popup4 1 1")
+		wait 1.5
+	}
+	if(killingspree >= 20 && killingspree20 == 0)
+	{
+		killingspree20=1
+		GetLocalClientPlayer().ClientCommand("playvideo killingspree20_1 1 1; playvideo videokillingspree20 100 100; playvideo popup4 1 1")
+		wait 1.8
+	}
+	if(killingspree >= 30 && killingspree30 == 0)
+	{
+		killingspree30=1
+		GetLocalClientPlayer().ClientCommand("playvideo killingspree30_1 1 1; playvideo videokillingspree30 100 100; playvideo popup5 1 1")
+		wait 2.5
+	}
+	
+	//Titan-Pilot Killstreak
+	if(pilotstreak >= 5 && pilotstreak5 == 0)
+	{
+		pilotstreak5=1
+		GetLocalClientPlayer().ClientCommand("playvideo pilotstreak5_1 1 1; playvideo videopilotstreak5 100 100; playvideo popup2 1 1")
+		wait 1.75
+	}
+	if(pilotstreak >= 10 && pilotstreak10 == 0)
+	{
+		pilotstreak10=1
+		GetLocalClientPlayer().ClientCommand("playvideo pilotstreak10_1 1 1; playvideo videopilotstreak10 100 100; playvideo popup3 1 1")
+		wait 2.3
+	}
+	if(pilotstreak >= 15 && pilotstreak15 == 0)
+	{
+		pilotstreak15=1
+		GetLocalClientPlayer().ClientCommand("playvideo pilotstreak15_1 1 1; playvideo videopilotstreak15 100 100; playvideo popup4 1 1")
+		wait 2.25
+	}
+	
+	//Assault Rifle Killstreak
+	if(assaultstreak >= 3 && assaultstreak3 == 0)
+	{
+		assaultstreak3=1
+		GetLocalClientPlayer().ClientCommand("playvideo assaultstreak3_1 1 1; playvideo videoassaultstreak3 100 100; playvideo popup2 1 1")
+		wait 1.25
+	}
+	if(assaultstreak >= 6 && assaultstreak6 == 0)
+	{
+		assaultstreak6=1
+		GetLocalClientPlayer().ClientCommand("playvideo assaultstreak6_1 1 1; playvideo videoassaultstreak6 100 100; playvideo popup3 1 1")
+		wait 1.1
+	}
+	if(assaultstreak >= 9 && assaultstreak9 == 0)
+	{
+		assaultstreak9=1
+		GetLocalClientPlayer().ClientCommand("playvideo assaultstreak9_1 1 1; playvideo videoassaultstreak9 100 100; playvideo popup4 1 1")
+		wait 1.25
+	}
+	
+	//SMG Killstreak
+	if(smgstreak >= 3 && smgstreak3 == 0)
+	{
+		smgstreak3=1
+		GetLocalClientPlayer().ClientCommand("playvideo smgstreak3_1 1 1; playvideo videosmgstreak3 100 100; playvideo popup2 1 1")
+		wait 1.4
+	}
+	if(smgstreak >= 6 && smgstreak6 == 0)
+	{
+		smgstreak6=1
+		GetLocalClientPlayer().ClientCommand("playvideo smgstreak6_1 1 1; playvideo videosmgstreak6 100 100; playvideo popup3 1 1")
+		wait 1.25
+	}
+	if(smgstreak >= 9 && smgstreak9 == 0)
+	{
+		smgstreak9=1
+		GetLocalClientPlayer().ClientCommand("playvideo smgstreak9_1 1 1; playvideo videosmgstreak9 100 100; playvideo popup4 1 1")
+		wait 1.2
+	}
+	
+	//Sniper Killstreak
+	if(sniperstreak >= 3 && sniperstreak3 == 0)
+	{
+		sniperstreak3=1
+		GetLocalClientPlayer().ClientCommand("playvideo sniperstreak3_1 1 1; playvideo videosniperstreak3 100 100; playvideo popup2 1 1")
+		wait 1.8
+	}
+	if(sniperstreak >= 5 && sniperstreak5 == 0)
+	{
+		sniperstreak5=1
+		GetLocalClientPlayer().ClientCommand("playvideo sniperstreak5_1 1 1; playvideo videosniperstreak5 100 100; playvideo popup3 1 1")
+		wait 1.6
+	}
+	if(sniperstreak >= 10 && sniperstreak10 == 0)
+	{
+		sniperstreak10=1
+		GetLocalClientPlayer().ClientCommand("playvideo sniperstreak10_1 1 1; playvideo videosniperstreak10 100 100; playvideo popup4 1 1")
+		wait 2
+	}
+	
+	//Shotgun Killstreak
+	if(shotgunstreak >= 3 && shotgunstreak3 == 0)
+	{
+		shotgunstreak3=1
+		GetLocalClientPlayer().ClientCommand("playvideo shotgunstreak3_1 1 1; playvideo videoshotgunstreak3 100 100; playvideo popup2 1 1")
+		wait 1.8
+	}
+	if(shotgunstreak >= 6 && shotgunstreak6 == 0)
+	{
+		shotgunstreak6=1
+		GetLocalClientPlayer().ClientCommand("playvideo shotgunstreak6_1 1 1; playvideo videoshotgunstreak6 100 100; playvideo popup3 1 1")
+		wait 1.7
+	}
+	if(shotgunstreak >= 10 && shotgunstreak10 == 0)
+	{
+		shotgunstreak10=1
+		GetLocalClientPlayer().ClientCommand("playvideo shotgunstreak10_1 1 1; playvideo videoshotgunstreak10 100 100; playvideo popup4 1 1")
+		wait 1.9
+	}
+	
+	//LMG Killstreak
+	if(lmgstreak >= 3 && lmgstreak3 == 0)
+	{
+		lmgstreak3=1
+		GetLocalClientPlayer().ClientCommand("playvideo lmgstreak3_1 1 1; playvideo videolmgstreak3 100 100; playvideo popup2 1 1")
+		wait 1.2
+	}
+	if(lmgstreak >= 6 && lmgstreak6 == 0)
+	{
+		lmgstreak6=1
+		GetLocalClientPlayer().ClientCommand("playvideo lmgstreak6_1 1 1; playvideo videolmgstreak6 100 100; playvideo popup3 1 1")
+		wait 2
+	}
+	if(lmgstreak >= 9 && lmgstreak9 == 0)
+	{
+		lmgstreak9=1
+		GetLocalClientPlayer().ClientCommand("playvideo lmgstreak9_1 1 1; playvideo videolmgstreak9 100 100; playvideo popup4 1 1")
+		wait 1.4
+	}
+	
+	//Sticky Killstreak
+	if(stickystreak >= 3 && stickystreak3 == 0)
+	{
+		stickystreak3=1
+		GetLocalClientPlayer().ClientCommand("playvideo stickystreak3_1 1 1; playvideo videostickystreak3 100 100; playvideo popup2 1 1")
+		wait 1.45
+	}
+	if(stickystreak >= 6 && stickystreak6 == 0)
+	{
+		stickystreak6=1
+		GetLocalClientPlayer().ClientCommand("playvideo stickystreak6_1 1 1; playvideo videostickystreak6 100 100; playvideo popup3 1 1")
+		wait 1.75
+	}
+	if(stickystreak >= 9 && stickystreak9 == 0)
+	{
+		stickystreak9=1
+		GetLocalClientPlayer().ClientCommand("playvideo stickystreak9_1 1 1; playvideo videostickystreak9 100 100; playvideo popup4 1 1")
+		wait 1.3
+	}
+
+	//STAR Killstreak
+	if(starstreak >= 10 && starstreak10 == 0)
+	{
+		starstreak10=1
+		GetLocalClientPlayer().ClientCommand("playvideo starstreak10_1 1 1; playvideo videolaserstreak3 100 100; playvideo popup2 1 1")
+		wait 1.75
+	}
+	
+	//Laser Killstreak
+	if(laserstreak >= 3 && laserstreak3 == 0)
+	{
+		laserstreak3=1
+		GetLocalClientPlayer().ClientCommand("playvideo laserstreak3_1 1 1; playvideo videolaserstreak3 100 100; playvideo popup2 1 1")
+		wait 1.75
+	}
+	if(laserstreak >= 6 && laserstreak6 == 0)
+	{
+		laserstreak6=1
+		GetLocalClientPlayer().ClientCommand("playvideo laserstreak6_1 1 1; playvideo videolaserstreak6 100 100; playvideo popup3 1 1")
+		wait 1.7
+	}
+	if(laserstreak >= 9 && laserstreak9 == 0)
+	{
+		laserstreak9=1
+		GetLocalClientPlayer().ClientCommand("playvideo laserstreak9_1 1 1; playvideo videolaserstreak9 100 100; playvideo popup4 1 1")
+		wait 2
+	}
+	
+	//Cold Killstreak
+	if(explosivestreak >= 10 && coldstreak10 == 0)
+	{
+		coldstreak10=1
+		GetLocalClientPlayer().ClientCommand("playvideo coldstreak10_1 1 1; playvideo videoexplosivestreak3 100 100; playvideo popup2 1 1")
+		wait 1.2
+	}
+	
+	//Explosive Killstreak
+	if(explosivestreak >= 3 && explosivestreak3 == 0)
+	{
+		explosivestreak3=1
+		GetLocalClientPlayer().ClientCommand("playvideo explosivestreak3_1 1 1; playvideo videoexplosivestreak3 100 100; playvideo popup2 1 1")
+		wait 1.2
+	}
+	if(explosivestreak >= 6 && explosivestreak6 == 0)
+	{
+		explosivestreak6=1
+		GetLocalClientPlayer().ClientCommand("playvideo explosivestreak6_1 1 1; playvideo videoexplosivestreak6 100 100; playvideo popup3 1 1")
+		wait 1.2
+	}
+	if(explosivestreak >= 10 && explosivestreak10 == 0)
+	{
+		explosivestreak10=1
+		GetLocalClientPlayer().ClientCommand("playvideo explosivestreak10_1 1 1; playvideo videoexplosivestreak10 100 100; playvideo popup4 1 1")
+		wait 1.3
+	}
+	
+	//Sidearm Killstreak
+	if(sidearmstreak >= 3 && sidearmstreak3 == 0)
+	{
+		sidearmstreak3=1
+		GetLocalClientPlayer().ClientCommand("playvideo sidearmstreak3_1 1 1; playvideo videosidearmstreak3 100 100; playvideo popup2 1 1")
+		wait 1.6
+	}
+	if(sidearmstreak >= 6 && sidearmstreak6 == 0)
+	{
+		sidearmstreak6=1
+		GetLocalClientPlayer().ClientCommand("playvideo sidearmstreak6_1 1 1; playvideo videosidearmstreak6 100 100; playvideo popup3 1 1")
+		wait 1.1
+	}
+	if(sidearmstreak >= 9 && sidearmstreak9 == 0)
+	{
+		sidearmstreak9=1
+		GetLocalClientPlayer().ClientCommand("playvideo sidearmstreak9_1 1 1; playvideo videosidearmstreak9 100 100; playvideo popup4 1 1")
+		wait 1.25
+	}
+	
+	//Melee Killstreak
+	if(meleestreak == 1 && meleestreak1 == 0 && infection == 0)
+	{
+		meleestreak1=1
+		GetLocalClientPlayer().ClientCommand("playvideo meleestreak1_1 1 1; playvideo videomeleestreak1 100 100; playvideo popup1 1 1")
+		wait 1.2
+	}
+	if(meleestreak >= 3 && meleestreak3 == 0 && infection == 0)
+	{
+		meleestreak3=1
+		GetLocalClientPlayer().ClientCommand("playvideo meleestreak3_1 1 1; playvideo videomeleestreak3 100 100; playvideo popup2 1 1")
+		wait 1.2
+	}
+	if(meleestreak >= 6 && meleestreak6 == 0 && infection == 0)
+	{
+		meleestreak6=1
+		GetLocalClientPlayer().ClientCommand("playvideo meleestreak6_1 1 1; playvideo videomeleestreak6 100 100; playvideo popup3 1 1")
+		wait 1.5
+	}
+	if(meleestreak >= 9 && meleestreak9 == 0 && infection == 0)
+	{
+		meleestreak9=1
+		GetLocalClientPlayer().ClientCommand("playvideo meleestreak9_1 1 1; playvideo videomeleestreak9 100 100; playvideo popup4 1 1")
+		wait 1.4
+	}
+	
+	//Zombie Killstreak
+	if(zombiestreak >= 3 && zombiestreak3 == 0 && infection == 1)
+	{
+		zombiestreak3=1
+		GetLocalClientPlayer().ClientCommand("playvideo zombiestreak3 1 1; playvideo videozombiestreak3 100 100; playvideo popup2 1 1")
+		wait 2
+	}
+	if(zombiestreak >= 6 && zombiestreak6 == 0 && infection == 1)
+	{
+		zombiestreak6=1
+		GetLocalClientPlayer().ClientCommand("playvideo zombiestreak6 1 1; playvideo videozombiestreak6 100 100; playvideo popup3 1 1")
+		wait 3.25
+	}
+	if(zombiestreak >= 9 && zombiestreak9 == 0 && infection == 1)
+	{
+		zombiestreak9=1
+		GetLocalClientPlayer().ClientCommand("playvideo zombiestreak9 1 1; playvideo videozombiestreak9 100 100; playvideo popup4 1 1")
+		wait 1.75
+	}
+	
+	//Survivor Killstreak
+	if(survivorstreak >= 5 && survivorstreak5 == 0 && infection == 1)
+	{
+		survivorstreak5=1
+		GetLocalClientPlayer().ClientCommand("playvideo survivorstreak5 1 1; playvideo videosurvivorstreak5 100 100; playvideo popup2 1 1")
+		wait 2.5
+	}
+	if(survivorstreak >= 10 && survivorstreak10 == 0 && infection == 1)
+	{
+		survivorstreak10=1
+		GetLocalClientPlayer().ClientCommand("playvideo survivorstreak10 1 1; playvideo videosurvivorstreak10 100 100; playvideo popup3 1 1")
+		wait 1.9
+	}
+	if(survivorstreak >= 15 && survivorstreak15 == 0 && infection == 1)
+	{
+		survivorstreak15=1
+		GetLocalClientPlayer().ClientCommand("playvideo survivorstreak15 1 1; playvideo videosurvivorstreak15 100 100; playvideo popup4 1 1")
+		wait 2.5
+	}
+	
+	//Short Killstreaks
+	if(fragstreak == 1 && fragstreak3 == 0)
+	{
+		fragstreak1=1
+		GetLocalClientPlayer().ClientCommand("playvideo fragstreak1_1 1 1; playvideo videofragstreak3 100 100; playvideo popup 1 1")
+		wait 1
+	}
+	if(fragstreak >= 3 && fragstreak3 == 0)
+	{
+		fragstreak3=1
+		GetLocalClientPlayer().ClientCommand("playvideo fragstreak3_1 1 1; playvideo videofragstreak3 100 100; playvideo popup 1 1")
+		wait 1
+	}
+	if(electricstreak >= 3 && electricstreak3 == 0)
+	{
+		electricstreak3=1
+		GetLocalClientPlayer().ClientCommand("playvideo electricstreak3_1 1 1; playvideo videoelectricstreak3 100 100; playvideo popup5 1 1")
+		wait 1.4
+	}
+	if(assassination==1)
+	{
+		assassination=0
+		GetLocalClientPlayer().ClientCommand("playvideo assassination 1 1; playvideo videoassassination 100 100; playvideo popup2 1 1")
+		wait 2
+	}
+	if(executionstreak >= 3 && executionstreak3 == 0)
+	{
+		executionstreak3=1
+		GetLocalClientPlayer().ClientCommand("playvideo executionstreak3_1 1 1; playvideo videoexecutionstreak3 100 100; playvideo popup2 1 1")
+		wait 2.25
+	}
+	if(pancake >= 5 && pancake5==0)
+	{
+		pancake5=1
+		GetLocalClientPlayer().ClientCommand("playvideo pancake 1 1; playvideo videostepstreak5 100 100; playvideo popup2 1 1")
+		wait 1.5
+	}
+	
+	//Titan Killstreak
+	if(titanstreak >= 2 && titanstreak2 == 0)
+	{
+		titanstreak2=1
+		GetLocalClientPlayer().ClientCommand("playvideo titanstreak2_1 1 1; playvideo videotitanstreak2 100 100; playvideo popup 1 1")
+		wait 1.55
+	}
+	if(titanstreak >= 3 && titanstreak3 == 0)
+	{
+		titanstreak3=1
+		GetLocalClientPlayer().ClientCommand("playvideo titanstreak3_1 1 1; playvideo videotitanstreak3 100 100; playvideo popup2 1 1")
+		wait 2
+	}
+	if(titanstreak >= 4 && titanstreak4 == 0)
+	{
+		titanstreak4=1
+		GetLocalClientPlayer().ClientCommand("playvideo titanstreak4_1 1 1; playvideo videotitanstreak4 100 100; playvideo popup3 1 1")
+		wait 2
+	}
+	if(titanstreak >= 5 && titanstreak5 == 0)
+	{
+		titanstreak5=1
+		GetLocalClientPlayer().ClientCommand("playvideo titanstreak5_1 1 1; playvideo videotitanstreak5 100 100; playvideo popup4 1 1")
+		wait 3
+	}
+	
+	//Collat Check
+	if(collatamount >= 99)
+	{
+		collatamount=0
+		GetLocalClientPlayer().ClientCommand("playvideo collateral 1 1; playvideo videocollateral 100 100; playvideo popup2 1 1")
+		wait 2
+	}
+	//Cluster Check
+	if(clusterluck >= 99)
+	{
+		clusterluck=0
+		GetLocalClientPlayer().ClientCommand("playvideo clusterluck 1 1; playvideo videocluster 100 100; playvideo popup2 1 1")
+		wait 1.9
+	}
+	//Annihilation Check
+	if(annihilation >= 99)
+	{
+		annihilation=0
+		GetLocalClientPlayer().ClientCommand("playvideo annihilation 1 1; playvideo videoannihilation 100 100; playvideo popup2 1 1")
+		wait 1.9
+	}
+	//Armageddon Check
+	if(armageddon >= 99)
+	{
+		armageddon=0
+		GetLocalClientPlayer().ClientCommand("playvideo armageddon 1 1; playvideo videoarmageddon 100 100; playvideo popup2 1 1")
+		wait 2.4
+	}
+	//From The Grave Check
+	if(grave >= 99)
+	{
+		grave=0
+		GetLocalClientPlayer().ClientCommand("playvideo grave 1 1; playvideo videograve 100 100; playvideo popup2 1 1")
+		wait 2.25
+	}
+	
+	//Side Medal Checks
+	
+	// Wait timer because otherwise this runs at basically the exact same time as the
+	// stuff in cl_hud, meaning simply positioning something too early could cause it
+	// to not properly record. Wack.
+	wait 0.1
+	
+	//Assist Streak
+	if(assist >= 3 && assiststreak3 == 0)
+	{
+		assiststreak3=1
+		GetLocalClientPlayer().ClientCommand("playvideo assiststreak3_1 1 1; playvideo videoassiststreak3 100 100; playvideo popup2 1 1")
+		wait 1.5
+	}
+	if(assist >= 6 && assiststreak6 == 0)
+	{
+		assiststreak6=1
+		GetLocalClientPlayer().ClientCommand("playvideo assiststreak6_1 1 1; playvideo videoassiststreak6 100 100; playvideo popup3 1 1")
+		wait 1.2
+	}
+	if(assist >= 9 && assiststreak9 == 0)
+	{
+		assiststreak9=1
+		GetLocalClientPlayer().ClientCommand("playvideo assiststreak9_1 1 1; playvideo videoassiststreak9 100 100; playvideo popup4 1 1")
+		wait 2
+	}
+	
+	//Infantry Streak
+	if(infantry >= 10 && infantrystreak10 == 0)
+	{
+		infantrystreak10=1
+		GetLocalClientPlayer().ClientCommand("playvideo infantrystreak10_1 1 1; playvideo videoinfantrystreak10 100 100; playvideo popup2 1 1")
+		wait 1.1
+	}
+	if(infantry >= 20 && infantrystreak20 == 0)
+	{
+		infantrystreak20=1
+		GetLocalClientPlayer().ClientCommand("playvideo infantrystreak20_1 1 1; playvideo videoinfantrystreak20 100 100; playvideo popup3 1 1")
+		wait 1
+	}
+	if(infantry >= 30 && infantrystreak30 == 0)
+	{
+		infantrystreak30=1
+		GetLocalClientPlayer().ClientCommand("playvideo infantrystreak30_1 1 1; playvideo videoinfantrystreak30 100 100; playvideo popup4 1 1")
+		wait 1.1
+	}
+	
+	//Headshot Streak
+	if(headshot >= 3 && headshotstreak3 == 0)
+	{
+		headshotstreak3=1
+		GetLocalClientPlayer().ClientCommand("playvideo headshotstreak3_1 1 1; playvideo videoheadshotstreak3 100 100; playvideo popup2 1 1")
+		wait 1.25
+	}
+	if(headshot >= 6 && headshotstreak6 == 0)
+	{
+		headshotstreak6=1
+		GetLocalClientPlayer().ClientCommand("playvideo headshotstreak6_1 1 1; playvideo videoheadshotstreak6 100 100; playvideo popup3 1 1")
+		wait 1.1
+	}
+	if(headshot >= 9 && headshotstreak9 == 0)
+	{
+		headshotstreak9=1
+		GetLocalClientPlayer().ClientCommand("playvideo headshotstreak9_1 1 1; playvideo videoheadshotstreak9 100 100; playvideo popup4 1 1")
+		wait 2.3
+	}
+	
+	//First Strike or Stole Battery
+	if(batterystolen == 1)
+	{
+		batterystolen=0
+		GetLocalClientPlayer().ClientCommand("playvideo batterystolen_1 1 1; playvideo videobatterystolen 100 100; playvideo popup2 1 1")
+		wait 1.2
+	}
+	if(firststrike == 1)
+	{
+		firststrike=2
+		GetLocalClientPlayer().ClientCommand("playvideo firststrike_1 1 1; playvideo videofirststrike 100 100; playvideo popup2 1 1")
+		wait 1.6
+	}
+	
+	
+	//Revenge or MVP Killstreak
+	if(revenge == 1)
+	{
+		revenge=2
+		GetLocalClientPlayer().ClientCommand("playvideo revenge_1 1 1; playvideo videorevenge 100 100; playvideo popup2 1 1")
+		wait 1.5
+		
+	}
+	if(mvpkill == 3)
+	{
+		mvpkill=4
+		GetLocalClientPlayer().ClientCommand("playvideo mvpkill3_1 1 1; playvideo videomvpkill3 100 100; playvideo popup2 1 1")
+		wait 1.4
+	}
+	
+	//Perfection
+	if(perfectioncheck==5)
+	{
+		perfectioncheck=6
+		wait 1.5
+		GetLocalClientPlayer().ClientCommand("playvideo perfection 1 1; playvideo videoperfection 100 100; playvideo popup5 1 1")
+		wait 1.4
+	}
+	
+	//Suicide Check
+	//if(queuesuicide == 1 && medalthreadqueue == 0)
+		//thread suicide()
+	
+	
+	//Deathstreak check
+	//checks if player has died in which it may play audio, also checks if MedalCall() is going to loop again
+	
+	 if(queuedeathstreak == 1 && medalthreadqueue == 0 && queuesuicide == 0)
+		thread deathstreak()
+	
+	//Restart function if queued
+	if(medalthreadqueue == 1)
+	{
+		thread medalCall()
+		medalthreadqueue = 0
+	}
+	else
+		medalcallactive = 0
+}
+
+/*void function suicide()
+{
+	GetLocalClientPlayer().ClientCommand("playvideo suicide 1 1")
+	queuesuicide=0
+	wait 1
+	if(queuedeathstreak == 1)
+		thread medalCall()
+	
+}*/
+
+void function deathstreak()
+{
+	if(death==4 && death3==0)
+	{
+		GetLocalClientPlayer().ClientCommand("playvideo death3_1 1 1; playvideo videodeath3 100 100; playvideo popup 1 1")
+		death3=1
+	}
+	if(death==6 && death5==0)
+	{
+		GetLocalClientPlayer().ClientCommand("playvideo death5_1 1 1; playvideo videodeath5 100 100; playvideo popup 1 1")
+		death5=1
+	}
+	
+	// Variable reset moved to here, since this has to run after everything else is finished
+	// If run in regular death check, streaks will stop being called out if you've died
+	
+	killstreak=0
+	killingspree=0
+	titanstreak=0
+	pilotstreak=0
+	assaultstreak=0
+	smgstreak=0
+	sniperstreak=0
+	shotgunstreak=0
+	lmgstreak=0
+	stickystreak=0
+	starstreak=0
+	laserstreak=0
+	explosivestreak=0
+	coldstreak=0
+	sidearmstreak=0
+	fragstreak=0
+	electricstreak=0
+	meleestreak=0
+	zombiestreak=0
+	survivorstreak=0
+	executionstreak=0
+	pancake=0
+	
+	perfectioncheck=0
+	
+	GetLocalClientPlayer().ClientCommand("sp_deathtips_tip1 77")
+	GetLocalClientPlayer().ClientCommand("sp_deathtips_tip2 77")
+	GetLocalClientPlayer().ClientCommand("sp_deathtips_tip4 0")
+	GetLocalClientPlayer().ClientCommand("sp_deathtips_tip5 0")
+	
+	//more pain
+	killstreak2=0
+	killstreak3=0
+	killstreak4=0
+	killstreak5=0
+	killstreak6=0
+	killstreak7=0
+	killstreak8=0
+	killstreak9=0
+	killstreak10=0
+	killstreak20=0
+	killstreak30=0
+	killingspree3=0
+	killingspree5=0
+	killingspree10=0
+	killingspree12=0
+	killingspree15=0
+	killingspree18=0
+	killingspree20=0
+	killingspree30=0
+	pilotstreak5=0
+	pilotstreak10=0
+	pilotstreak15=0
+	assaultstreak3=0
+	assaultstreak6=0
+	assaultstreak9=0
+	smgstreak3=0
+	smgstreak6=0
+	smgstreak9=0
+	sniperstreak3=0
+	sniperstreak5=0
+	sniperstreak10=0
+	shotgunstreak3=0
+	shotgunstreak6=0
+	shotgunstreak10=0
+	lmgstreak3=0
+	lmgstreak6=0
+	lmgstreak9=0
+	stickystreak3=0
+	stickystreak6=0
+	stickystreak9=0
+	starstreak=0
+	laserstreak3=0
+	laserstreak6=0
+	laserstreak9=0
+	coldstreak10=0
+	explosivestreak3=0
+	explosivestreak6=0
+	explosivestreak10=0
+	sidearmstreak3=0
+	sidearmstreak6=0
+	sidearmstreak9=0
+	fragstreak3=0
+	electricstreak3=0
+	meleestreak1=0
+	meleestreak3=0
+	meleestreak6=0
+	meleestreak9=0
+	zombiestreak3=0
+	zombiestreak6=0
+	zombiestreak9=0
+	survivorstreak5=0
+	survivorstreak10=0
+	survivorstreak15=0
+	executionstreak3=0
+	titanstreak2=0
+	titanstreak3=0
+	titanstreak4=0
+	titanstreak5=0
+	pancake5=0
+	
+	
+	assist=0
+	assiststreak3=0
+	assiststreak6=0
+	assiststreak9=0
+	infantry=0
+	infantrystreak10=0
+	infantrystreak20=0
+	infantrystreak30=0
+	headshot=0
+	headshotstreak3=0
+	headshotstreak6=0
+	headshotstreak9=0
+	firststrike=0
+	revenge=0
+	mvpkill3=0
+	batterystolen=0
+	
+	blitz1=0
+	blitz2=0
+	blitz3=0
+	blitz4=0
+	blitz1earn=0
+	blitz2earn=0
+	blitz3earn=0
+	blitz4earn=0
+	
+	queuedeathstreak = 0
+}
+
+// alias registration clusterfuck (better in here than out there ay?)
+void function aliasRegisterObit()
+{
+	//aliases randomly decided to stop working for some medals after a certain point with no explanation, so I'm not using them anymore.
+	//GetLocalClientPlayer().ClientCommand("alias killstreak2_1 \"playvideo killstreak2_1 1 1; playvideo videokillstreak2 100 100; playvideo popup 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias killstreak3_1 \"playvideo killstreak3_1 1 1; playvideo videokillstreak3 100 100; playvideo popup 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias killstreak4_1 \"playvideo killstreak4_1 1 1; playvideo videokillstreak4 100 100; playvideo popup2 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias killstreak5_1 \"playvideo killstreak5_1 1 1; playvideo videokillstreak5 100 100; playvideo popup2 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias killstreak6_1 \"playvideo killstreak6_1 1 1; playvideo videokillstreak6 100 100; playvideo popup3 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias killstreak7_1 \"playvideo killstreak7_1 1 1; playvideo videokillstreak7 100 100; playvideo popup3 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias killstreak8_1 \"playvideo killstreak8_1 1 1; playvideo videokillstreak8 100 100; playvideo popup4 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias killstreak9_1 \"playvideo killstreak9_1 1 1; playvideo videokillstreak9 100 100; playvideo popup4 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias killstreak10_1 \"playvideo killstreak10_1 1 1; playvideo videokillstreak10 100 100; playvideo popup5 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias killstreak20_1 \"playvideo killstreak20_1 1 1; playvideo videokillstreak20 100 100; playvideo popup5 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias killstreak30_1 \"playvideo killstreak30_1 1 1; playvideo videokillstreak30 100 100; playvideo popup5 1 1;\"")
+	
+	//GetLocalClientPlayer().ClientCommand("alias killingspree3_1 \"playvideo killingspree3_1 1 1; playvideo videokillingspree3 100 100; playvideo popup 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias killingspree5_1 \"playvideo killingspree5_1 1 1; playvideo videokillingspree5 100 100; playvideo popup2 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias killingspree10_1 \"playvideo killingspree10_1 1 1; playvideo videokillingspree10 100 100; playvideo popup2 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias killingspree12_1 \"playvideo killingspree12_1 1 1; playvideo videokillingspree12 100 100; playvideo popup3 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias killingspree15_1 \"playvideo killingspree15_1 1 1; playvideo videokillingspree15 100 100; playvideo popup3 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias killingspree18_1 \"playvideo killingspree18_1 1 1; playvideo videokillingspree18 100 100; playvideo popup4 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias killingspree20_1 \"playvideo killingspree20_1 1 1; playvideo videokillingspree20 100 100; playvideo popup4 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias killingspree30_1 \"playvideo killingspree30_1 1 1; playvideo videokillingspree30 100 100; playvideo popup5 1 1;\"")
+
+	//GetLocalClientPlayer().ClientCommand("alias titanstreak2_1 \"playvideo titanstreak2_1 1 1; playvideo videotitanstreak2 100 100; playvideo popup 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias titanstreak3_1 \"playvideo titanstreak3_1 1 1; playvideo videotitanstreak3 100 100; playvideo popup2 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias titanstreak4_1 \"playvideo titanstreak4_1 1 1; playvideo videotitanstreak4 100 100; playvideo popup3 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias titanstreak5_1 \"playvideo titanstreak5_1 1 1; playvideo videotitanstreak5 100 100; playvideo popup4 1 1;\"")
+	
+	//GetLocalClientPlayer().ClientCommand("alias death4_1 \"playvideo death3_1 1 1; playvideo videodeath3 100 100; playvideo popup 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias death6_1 \"playvideo death5_1 1 1; playvideo videodeath5 100 100; playvideo popup 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias suicide \"playvideo suicide 1 1;\"")
+
+	//GetLocalClientPlayer().ClientCommand("alias pilotstreak5_1 \"playvideo pilotstreak5_1 1 1; playvideo videopilotstreak5 100 100; playvideo popup2 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias pilotstreak10_1 \"playvideo pilotstreak10_1 1 1; playvideo videopilotstreak10 100 100; playvideo popup3 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias pilotstreak15_1 \"playvideo pilotstreak15_1 1 1; playvideo videopilotstreak15 100 100; playvideo popup4 1 1;\"")
+
+	//GetLocalClientPlayer().ClientCommand("alias assaultstreak3_1 \"playvideo assaultstreak3_1 1 1; playvideo videoassaultstreak3 100 100; playvideo popup2 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias assaultstreak6_1 \"playvideo assaultstreak6_1 1 1; playvideo videoassaultstreak6 100 100; playvideo popup3 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias assaultstreak9_1 \"playvideo assaultstreak9_1 1 1; playvideo videoassaultstreak9 100 100; playvideo popup4 1 1;\"")
+
+	//GetLocalClientPlayer().ClientCommand("alias smgstreak3_1 \"playvideo smgstreak3_1 1 1; playvideo videosmgstreak3 100 100; playvideo popup2 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias smgstreak6_1 \"playvideo smgstreak6_1 1 1; playvideo videosmgstreak6 100 100; playvideo popup3 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias smgstreak9_1 \"playvideo smgstreak9_1 1 1; playvideo videosmgstreak9 100 100; playvideo popup4 1 1;\"")
+
+	//GetLocalClientPlayer().ClientCommand("alias sniperstreak3_1 \"playvideo sniperstreak3_1 1 1; playvideo videosniperstreak3 100 100; playvideo popup2 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias sniperstreak5_1 \"playvideo sniperstreak5_1 1 1; playvideo videosniperstreak5 100 100; playvideo popup3 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias sniperstreak10_1 \"playvideo sniperstreak10_1 1 1; playvideo videosniperstreak10 100 100; playvideo popup4 1 1;\"")
+
+	//GetLocalClientPlayer().ClientCommand("alias shotgunstreak3_1 \"playvideo shotgunstreak3_1 1 1; playvideo videoshotgunstreak3 100 100; playvideo popup2 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias shotgunstreak6_1 \"playvideo shotgunstreak6_1 1 1; playvideo videoshotgunstreak6 100 100; playvideo popup3 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias shotgunstreak10_1 \"playvideo shotgunstreak10_1 1 1; playvideo videoshotgunstreak10 100 100; playvideo popup4 1 1;\"")
+
+	//GetLocalClientPlayer().ClientCommand("alias lmgstreak3_1 \"playvideo lmgstreak3_1 1 1; playvideo videolmgstreak3 100 100; playvideo popup2 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias lmgstreak6_1 \"playvideo lmgstreak6_1 1 1; playvideo videolmgstreak6 100 100; playvideo popup3 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias lmgstreak9_1 \"playvideo lmgstreak9_1 1 1; playvideo videolmgstreak9 100 100; playvideo popup4 1 1;\"")
+
+	//GetLocalClientPlayer().ClientCommand("alias stickystreak3_1 \"playvideo stickystreak3_1 1 1; playvideo videostickystreak3 100 100; playvideo popup2 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias stickystreak6_1 \"playvideo stickystreak6_1 1 1; playvideo videostickystreak6 100 100; playvideo popup3 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias stickystreak9_1 \"playvideo stickystreak9_1 1 1; playvideo videostickystreak9 100 100; playvideo popup4 1 1;\"")
+
+	//GetLocalClientPlayer().ClientCommand("alias starstreak10_1 \"playvideo starstreak10_1 1 1; playvideo videolaserstreak3 100 100; playvideo popup2 1 1;\"")
+
+	//GetLocalClientPlayer().ClientCommand("alias laserstreak3_1 \"playvideo laserstreak3_1 1 1; playvideo videolaserstreak3 100 100; playvideo popup2 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias laserstreak6_1 \"playvideo laserstreak6_1 1 1; playvideo videolaserstreak6 100 100; playvideo popup3 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias laserstreak9_1 \"playvideo laserstreak9_1 1 1; playvideo videolaserstreak9 100 100; playvideo popup4 1 1;\"")
+
+	//GetLocalClientPlayer().ClientCommand("alias coldstreak10_1 \"playvideo coldstreak10_1 1 1; playvideo videoexplosivestreak3 100 100; playvideo popup2 1 1;\"")
+
+	//GetLocalClientPlayer().ClientCommand("alias explosivestreak3_1 \"playvideo explosivestreak3_1 1 1; playvideo videoexplosivestreak3 100 100; playvideo popup2 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias explosivestreak6_1 \"playvideo explosivestreak6_1 1 1; playvideo videoexplosivestreak6 100 100; playvideo popup3 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias explosivestreak10_1 \"playvideo explosivestreak10_1 1 1; playvideo videoexplosivestreak10 100 100; playvideo popup4 1 1;\"")
+
+	//GetLocalClientPlayer().ClientCommand("alias sidearmstreak3_1 \"playvideo sidearmstreak3_1 1 1; playvideo videosidearmstreak3 100 100; playvideo popup2 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias sidearmstreak6_1 \"playvideo sidearmstreak6_1 1 1; playvideo videosidearmstreak6 100 100; playvideo popup3 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias sidearmstreak9_1 \"playvideo sidearmstreak9_1 1 1; playvideo videosidearmstreak9 100 100; playvideo popup4 1 1;\"")
+	
+	//GetLocalClientPlayer().ClientCommand("alias meleestreak1_1 \"playvideo meleestreak1_1 1 1; playvideo videomeleestreak1 100 100; playvideo popup1 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias meleestreak3_1 \"playvideo meleestreak3_1 1 1; playvideo videomeleestreak3 100 100; playvideo popup2 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias meleestreak6_1 \"playvideo meleestreak6_1 1 1; playvideo videomeleestreak6 100 100; playvideo popup3 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias meleestreak9_1 \"playvideo meleestreak9_1 1 1; playvideo videomeleestreak9 100 100; playvideo popup4 1 1;\"")
+	
+	//GetLocalClientPlayer().ClientCommand("alias zombiestreak3 \"playvideo zombiestreak3 1 1; playvideo videozombiestreak3 100 100; playvideo popup2 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias zombiestreak6 \"playvideo zombiestreak6 1 1; playvideo videozombiestreak6 100 100; playvideo popup3 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias zombiestreak9 \"playvideo zombiestreak9 1 1; playvideo videozombiestreak9 100 100; playvideo popup4 1 1;\"")
+	
+	//GetLocalClientPlayer().ClientCommand("alias survivorstreak5 \"playvideo survivorstreak5 1 1; playvideo videosurvivorstreak5 100 100; playvideo popup2 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias survivorstreak10 \"playvideo survivorstreak10 1 1; playvideo videosurvivorstreak10 100 100; playvideo popup3 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias survivorstreak15 \"playvideo survivorstreak15 1 1; playvideo videosurvivorstreak15 100 100; playvideo popup4 1 1;\"")
+
+	//GetLocalClientPlayer().ClientCommand("alias assiststreak3_1 \"playvideo assiststreak3_1 1 1; playvideo videoassiststreak3 100 100; playvideo popup2 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias assiststreak6_1 \"playvideo assiststreak6_1 1 1; playvideo videoassiststreak6 100 100; playvideo popup3 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias assiststreak9_1 \"playvideo assiststreak9_1 1 1; playvideo videoassiststreak9 100 100; playvideo popup4 1 1;\"")
+
+	//GetLocalClientPlayer().ClientCommand("alias headshotstreak3_1 \"playvideo headshotstreak3_1 1 1; playvideo videoheadshotstreak3 100 100; playvideo popup2 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias headshotstreak6_1 \"playvideo headshotstreak6_1 1 1; playvideo videoheadshotstreak6 100 100; playvideo popup3 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias headshotstreak9_1 \"playvideo headshotstreak9_1 1 1; playvideo videoheadshotstreak9 100 100; playvideo popup4 1 1;\"")
+
+	//GetLocalClientPlayer().ClientCommand("alias infantrystreak10_1 \"playvideo infantrystreak10_1 1 1; playvideo videoinfantrystreak10 100 100; playvideo popup2 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias infantrystreak20_1 \"playvideo infantrystreak20_1 1 1; playvideo videoinfantrystreak20 100 100; playvideo popup3 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias infantrystreak30_1 \"playvideo infantrystreak30_1 1 1; playvideo videoinfantrystreak30 100 100; playvideo popup4 1 1;\"")
+
+	
+	//GetLocalClientPlayer().ClientCommand("alias revenge_1 \"playvideo revenge_1 1 1; playvideo videorevenge 100 100; playvideo popup2 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias mvpkill3_1 \"playvideo mvpkill3_1 1 1; playvideo videomvpkill3 100 100; playvideo popup2 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias batterystolen_1 \"playvideo batterystolen_1 1 1; playvideo videobatterystolen 100 100; playvideo popup2 1 1;\"")
+
+	//GetLocalClientPlayer().ClientCommand("alias fragstreak1_1 \"playvideo fragstreak1_1 1 1; playvideo videofragstreak3 100 100; playvideo popup 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias fragstreak3_1 \"playvideo fragstreak3_1 1 1; playvideo videofragstreak3 100 100; playvideo popup 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias electricstreak3_1 \"playvideo electricstreak3_1 1 1; playvideo videoelectricstreak3 100 100; playvideo popup5 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias executionstreak3_1 \"playvideo executionstreak3_1 1 1; playvideo videoexecutionstreak3 100 100; playvideo popup 1 1;\"")
+	
+	//after this point, aliases seem to no longer be logged for whatever reason. Just put them directly in the command, and consider doing the same for the rest later.
+	
+	//GetLocalClientPlayer().ClientCommand("alias perfection \"playvideo perfection 1 1; playvideo videoperfection 100 100; playvideo popup5 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias collateral \"playvideo collateral 1 1; playvideo videocollateral 100 100; playvideo popup2 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias clusterluck \"playvideo clusterluck 1 1; playvideo videocluster 100 100; playvideo popup2 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias annihilation \"playvideo annihilation 1 1; playvideo videoannihilation 100 100; playvideo popup2 1 1;\"")
+	//GetLocalClientPlayer().ClientCommand("alias armageddon \"playvideo armageddon 1 1; playvideo videoarmageddon 100 100; playvideo popup2 1 1;\"")
+	
+}
+
+// checks changes to given deathtips variables at any time, automatically doing what it needs to do.
+// Deathtips need to be rearranged in what their full uses are for.
+//
+// sp_deathtips_tip1 --> Side medals in cl_hud ONLY
+// sp_deathtips_tip2 --> Checking gamemode/reset on round end only
+// sp_deathtips_tip3 --> Perfection Check
+// sp_deathtips_tip4 --> 
+// sp_deathtips_tip5 --> 
+//
+void function deathtipsChecker()
+{	
+	while(true)
+	{
+		wait 0.1
+		if(GetConVarInt("sp_deathtips_tip1") == 1)
+		{
+			headshot+=1
+			GetLocalClientPlayer().ClientCommand("sp_deathtips_tip1 0")
+		}
+		if(GetConVarInt("sp_deathtips_tip1") == 2)
+		{
+			firststrike=1
+			GetLocalClientPlayer().ClientCommand("sp_deathtips_tip1 0")
+		}
+		if(GetConVarInt("sp_deathtips_tip1") == 3)
+		{
+			revenge=1
+			GetLocalClientPlayer().ClientCommand("sp_deathtips_tip1 0")
+		}
+		if(GetConVarInt("sp_deathtips_tip1") == 4)
+		{
+			mvpkill+=1
+			GetLocalClientPlayer().ClientCommand("sp_deathtips_tip1 0")
+		}
+		if(GetConVarInt("sp_deathtips_tip1") == 5)
+		{
+			batterystolen=1
+			GetLocalClientPlayer().ClientCommand("sp_deathtips_tip1 0")
+			
+			if(medalcallactive==0)
+				thread medalCall()
+			else
+				medalthreadqueue=1
+		}
+		if(GetConVarInt("sp_deathtips_tip1") == 6)
+		{
+			assist+=1
+			GetLocalClientPlayer().ClientCommand("sp_deathtips_tip1 0")
+			
+			if(medalcallactive==0)
+				thread medalCall()
+			else
+				medalthreadqueue=1
+		}
+		if(GetConVarInt("sp_deathtips_tip1") == 7)
+		{
+			infantry+=1
+			GetLocalClientPlayer().ClientCommand("sp_deathtips_tip1 0")
+			
+			if(medalcallactive==0)
+				thread medalCall()
+			else
+				medalthreadqueue=1
+		}
+		if(perfectioncheck==2)
+		{
+			GetLocalClientPlayer().ClientCommand("sp_deathtips_tip3 1")
+			perfectioncheck=3
+		}
+		if(perfectioncheck==0)
+		{
+			GetLocalClientPlayer().ClientCommand("sp_deathtips_tip3 0")
+			perfectioncheck=4
+		}
+		if(GetConVarInt("sp_deathtips_tip2") == 1)
+		{
+			infection=1
+			GetLocalClientPlayer().ClientCommand("sp_deathtips_tip2 0")
+		}
+		if(GetConVarInt("sp_deathtips_tip2") == 99)
+		{
+			if(medalcallactive == 0)
+				thread deathstreak()
+			else
+				queuedeathstreak=1
+			GetLocalClientPlayer().ClientCommand("sp_deathtips_tip2 0")
+		}
+		if(GetConVarInt("sp_deathtips_tip3") == 2)
+		{
+			GetLocalClientPlayer().ClientCommand("sp_deathtips_tip3 3")
+			perfectioncheck=5
+			
+			if(medalcallactive==0)
+				thread medalCall()
+			else
+				medalthreadqueue=1
+		}
+		
+	}
+}
+
+//Collateral
+void function collatCheck()
+{
+	wait 0.2
+	if(collatamount >= 2 && collatamount != 99)
+	{
+		collatamount=99
+		if(medalcallactive==0)
+				thread medalCall()
+			else
+				medalthreadqueue=1
+	}
+	else if(collatamount != 99)
+	{
+		collatamount=0
+	}
+}
+//Clusterluck
+void function clusterCheck()
+{
+	wait 5.5
+	if(clusterluck != 99)
+		clusterluck=0
+}
+//Annihilation
+void function annihilationCheck()
+{
+	wait 0.1
+	if(annihilation >= 3 && annihilation != 99)
+	{
+		annihilation=99 
+		if(medalcallactive==0)
+				thread medalCall()
+			else
+				medalthreadqueue=1
+	}
+	else if(annihilation != 99)
+	{
+		annihilation=0
+	}
+}
+//Armageddon
+void function armageddonCheck()
+{
+	wait 3
+	if(armageddon != 99)
+		armageddon=0
+}
+//From the Grave
+void function graveCheck()
+{
+	wait 3
+	if(grave!=99)
+		grave=0
+}
+
+
+
+
+
+void function Obituary_Print( string attackerDisplayName, string weaponDisplayName, string victimDisplayName, vector attackerColor, vector weaponColor, vector victimColor, weaponIcon = null, string attackerPetDisplayName = "", string victimPetDisplayName = "" )
+{
+	#if DEV
+		if ( split( attackerDisplayName, "(" ).len() )
+			attackerDisplayName = split( attackerDisplayName, "(" )[0]
+
+		if ( split( victimDisplayName, "(" ).len() )
+			victimDisplayName = split( victimDisplayName, "(" )[0]
+	#endif
+
+	ObitStringData obitStringData
+
+	Assert( typeof( weaponDisplayName ) == "string" )
+
+	obitStringData.attackerName = attackerDisplayName
+	obitStringData.attackerPetName = attackerPetDisplayName
+	obitStringData.victimName = victimDisplayName
+	obitStringData.victimPetName = victimPetDisplayName
+	obitStringData.weaponLocalizedName = weaponDisplayName
+	obitStringData.weaponLocalizedString = "#OBIT_BRACKETED_STRING"
+
+	string attackerString
+	string weaponString
+	string victimString
+
+	if ( attackerPetDisplayName != "" )
+	{
+		obitStringData.attackerLocalizedString = "#OBIT_PLAYER_CONTROLLED_AI_STRING"
+		attackerString = Localize( "#OBIT_PLAYER_CONTROLLED_AI_STRING", attackerDisplayName, Localize( attackerPetDisplayName ) )
+	}
+	else
+	{
+		obitStringData.attackerLocalizedString = "#OBIT_PLAYER_STRING"
+		attackerString = Localize( "#OBIT_PLAYER_STRING", attackerDisplayName )
+	}
+
+	if ( victimPetDisplayName != "" )
+	{
+		obitStringData.victimLocalizedString = "#OBIT_PLAYER_CONTROLLED_AI_STRING"
+		victimString = Localize( "#OBIT_PLAYER_CONTROLLED_AI_STRING", victimDisplayName, Localize( victimPetDisplayName ) )
+	}
+	else
+	{
+		obitStringData.victimLocalizedString = "#OBIT_PLAYER_STRING"
+		victimString = Localize( "#OBIT_PLAYER_STRING", attackerDisplayName )
+	}
+
+	string localizedObit = Localize( "#OBIT_ENT_WEAPON_ENT", attackerString, Localize( weaponDisplayName ), victimString )
+
+	AddObituary( obitStringData, attackerColor, victimColor )
+
+//	#OBIT_PLAYER_CONTROLLED_AI_STRING
+//	#OBIT_BRACKETED_STRING
+
+////		"A's B"
+//		file.obituaryLines[ next ].attacker.SetText( "#OBIT_PLAYER_CONTROLLED_AI_STRING", attackerDisplayName, obituaryData.attackerPetDisplayName  )
+//	else
+//		file.obituaryLines[ next ].attacker.SetText( obituaryData.attackerDisplayName )
+//
+//	if ( obituaryData.victimPetDisplayName != "" )
+//		//		"A's B"
+//		file.obituaryLines[ next ].victim.SetText( "#OBIT_PLAYER_CONTROLLED_AI_STRING", obituaryData.victimDisplayName, obituaryData.victimPetDisplayName )
+//	else
+//		file.obituaryLines[ next ].victim.SetText( obituaryData.victimDisplayName )
+//	file.obituaryLines[ next ].victim.SetColor( ColorStringToArray( expect string( obituaryData.victimColor ) ) )
+//
+////	eventText = format( "Killed by `1%s`0", attackerTypeText )
+////	string obitString = "`1" + attackerDisplayName + "`0 " + obituaryData.weaponDisplayName
+//
+//	PrintTable( obituaryData )
+
+//	thread HandleObituaryOverflow( obituaryData )
+}
+
+
+void function Obituary_Print_Localized( string localizedPrint, vector altColor1 = <255, 255, 255>, vector altColor2 = <255, 255, 255>, vector altColor3 = <255, 255, 255>, vector backgroundColor = <255, 255, 255>, float backgroundAlpha = 0.0 )
+{
+	if ( !file.obituariesEnabled )
+		return
+
+	var rui = CreateCockpitRui( $"ui/obituary_crawl_localized.rpak" )
+	RuiSetGameTime( rui, "startTime", Time() )
+	RuiSetGameTime( rui, "updateTime", Time() )
+	RuiSetFloat( rui, "duration", OBITUARY_DURATION )
+
+	RuiSetString( rui, "obitString", localizedPrint )
+
+	RuiSetFloat3( rui, "string1Color", altColor1 / 255.0 )
+	RuiSetFloat3( rui, "string2Color", altColor2 / 255.0 )
+	RuiSetFloat3( rui, "string3Color", altColor3 / 255.0 )
+
+	RuiSetFloat3( rui, "backgroundColor", backgroundColor / 255.0 )
+	RuiSetFloat( rui, "backgroundAlpha", backgroundAlpha )
+
+	ObituaryData newObituary
+	newObituary.rui = rui
+	newObituary.startTime = Time()
+	file.obituaryQueue.insert( 0, newObituary )
+
+	UpdateObituaryQueue()
+}
+
+
+void function Obituary_Print_Generic( string localizedEvent, string entityName, vector eventColor, vector nameColor )
+{
+	if ( !file.obituariesEnabled )
+		return
+
+	var rui = CreateCockpitRui( $"ui/obituary_crawl_generic.rpak" )
+	RuiSetGameTime( rui, "startTime", Time() )
+	RuiSetGameTime( rui, "updateTime", Time() )
+	RuiSetFloat( rui, "duration", OBITUARY_DURATION )
+
+	RuiSetString( rui, "localizedString", localizedEvent )
+	RuiSetString( rui, "entityName", entityName )
+
+	RuiSetFloat3( rui, "string1Color", eventColor / 255.0 )
+	RuiSetFloat3( rui, "string2Color", nameColor / 255.0 )
+
+	ObituaryData newObituary
+	newObituary.rui = rui
+	newObituary.startTime = Time()
+	file.obituaryQueue.insert( 0, newObituary )
+
+	UpdateObituaryQueue()
+}
+
+
+void function UpdateObituaryQueue()
+{
+	for ( int index = file.obituaryQueue.len() - 1; index >= 0; index-- )
+	{
+		ObituaryData obitData = file.obituaryQueue[index]
+
+		if ( Time() - obitData.startTime >= OBITUARY_DURATION || index > 6 )
+		{
+			RuiDestroy( obitData.rui )
+			file.obituaryQueue.remove( index )
+			continue
+		}
+
+		RuiSetInt( obitData.rui, "offset", index + file.indexOffest )
+		RuiSetGameTime( obitData.rui, "updateTime", Time() )
+	}
+}
+
+void function AddObituary( ObitStringData obitStringData, vector string1Color, vector string2Color )
+{
+	if ( !file.obituariesEnabled )
+		return
+
+	//	var rui = RuiCreate( $"ui/obituary_crawl.rpak", clGlobal.topoFullScreen, RUI_DRAW_HUD, 0 )
+	var rui = CreateCockpitRui( $"ui/obituary_crawl.rpak" )
+	RuiSetGameTime( rui, "startTime", Time() )
+	RuiSetGameTime( rui, "updateTime", Time() )
+	RuiSetFloat( rui, "duration", OBITUARY_DURATION )
+
+	string attackerName = ""
+	string attackerPetName = ""
+	string victimName = ""
+	string victimPetName = ""
+	string attackerLocalizedString = "#OBIT_PLAYER_STRING"
+	string victimLocalizedString = "#OBIT_PLAYER_STRING"
+	string weaponLocalizedString = "#OBIT_BRACKETED_STRING"
+
+	// Trying to track down a code assert where the third argument to RuiSetString is somehow null.
+	Assert( typeof( obitStringData.attackerName ) == "string" )
+	Assert( typeof( obitStringData.attackerPetName ) == "string" )
+	Assert( typeof( obitStringData.attackerLocalizedString ) == "string" )
+	Assert( typeof( obitStringData.victimName ) == "string" )
+	Assert( typeof( obitStringData.victimPetName ) == "string" )
+	Assert( typeof( obitStringData.victimLocalizedString ) == "string" )
+	Assert( typeof( obitStringData.weaponLocalizedName ) == "string" )
+	Assert( typeof( obitStringData.weaponLocalizedString ) == "string" )
+
+	RuiSetString( rui, "attackerName", obitStringData.attackerName )
+	if ( obitStringData.attackerPetName.len() )
+	{
+		RuiSetString( rui, "attackerPetName", obitStringData.attackerPetName )
+		RuiSetBool( rui, "hasAttackerPetName", true )
+	}
+	RuiSetString( rui, "attackerLocalizedString", obitStringData.attackerLocalizedString )
+	RuiSetString( rui, "victimName", obitStringData.victimName )
+	if ( obitStringData.victimPetName.len() )
+	{
+		RuiSetString( rui, "victimPetName", obitStringData.victimPetName )
+		RuiSetBool( rui, "hasVictimPetName", true )
+	}
+	RuiSetString( rui, "victimLocalizedString", obitStringData.victimLocalizedString )
+	Assert( typeof( obitStringData.weaponLocalizedName ) == "string" )
+	RuiSetString( rui, "weaponLocalizedName", obitStringData.weaponLocalizedName )
+	RuiSetString( rui, "weaponLocalizedString", obitStringData.weaponLocalizedString )
+	RuiSetFloat3( rui, "string1Color", string1Color / 255.0 )
+	RuiSetFloat3( rui, "string2Color", string2Color / 255.0 )
+
+	ObituaryData newObituary
+	newObituary.rui = rui
+	newObituary.startTime = Time()
+	file.obituaryQueue.insert( 0, newObituary )
+
+	UpdateObituaryQueue()
+}
+
+/*
+function Obituary_Display( obituaryData )
+{
+	local next = obituaryData.indexToUse
+	BumpDownExistingObituaries()
+
+	if ( split( obituaryData.attackerDisplayName, "(" ).len() )
+		obituaryData.attackerDisplayName = split( obituaryData.attackerDisplayName, "(" )[0]
+
+	if ( split( obituaryData.victimDisplayName, "(" ).len() )
+		obituaryData.victimDisplayName = split( obituaryData.victimDisplayName, "(" )[0]
+
+
+	if ( obituaryData.attackerPetDisplayName != "" )
+		file.obituaryLines[ next ].attacker.SetText( "#OBIT_PLAYER_CONTROLLED_AI_STRING", obituaryData.attackerDisplayName, obituaryData.attackerPetDisplayName  )
+	else
+		file.obituaryLines[ next ].attacker.SetText( obituaryData.attackerDisplayName )
+	file.obituaryLines[ next ].attacker.SetColor( ColorStringToArray( expect string( obituaryData.attackerColor ) ) )
+
+	file.obituaryLines[ next ].weapon.SetText( "#OBIT_BRACKETED_STRING", obituaryData.weaponDisplayName, null, null, null, null )
+	file.obituaryLines[ next ].weapon.SetColor( ColorStringToArray( expect string( obituaryData.weaponColor ) ) )
+
+	if ( obituaryData.victimPetDisplayName != "" )
+		file.obituaryLines[ next ].victim.SetText( "#OBIT_PLAYER_CONTROLLED_AI_STRING", obituaryData.victimDisplayName, obituaryData.victimPetDisplayName )
+	else
+		file.obituaryLines[ next ].victim.SetText( obituaryData.victimDisplayName )
+	file.obituaryLines[ next ].victim.SetColor( ColorStringToArray( expect string( obituaryData.victimColor ) ) )
+
+	if ( obituaryData.weaponIcon )
+	{
+		file.obituaryLines[ next ].icon.SetImage( obituaryData.weaponIcon )
+		file.obituaryLines[ next ].icon.SetSize( file.obituaryLines[ next ].victim.GetHeight(), file.obituaryLines[ next ].victim.GetHeight() )
+	}
+	else
+	{
+		file.obituaryLines[ next ].icon.SetWidth( 0 )
+	}
+
+	file.obituaryLines[ next ].victim.ReturnToBasePos()
+
+	foreach ( elem in file.obituaryLines[ next ]	)
+	{
+		elem.SetAlpha( 128 )
+		elem.FadeOverTimeDelayed( 0, OBITUARY_FADE_OUT_DURATION, OBITUARY_DURATION )
+		elem.Show()
+	}
+
+	// increment which hud elems to use next time
+	file.nextObituaryIndexToUse++
+	if ( file.nextObituaryIndexToUse >= NUM_OBITUARY_LINES )
+		file.nextObituaryIndexToUse = 0
+}
+*/
+
+void function Obituary_SetEnabled( bool state )
+{
+	file.obituariesEnabled = state
+}
+
+void function Obituary_SetIndexOffset( int offset )
+{
+	file.indexOffest = offset
+}
