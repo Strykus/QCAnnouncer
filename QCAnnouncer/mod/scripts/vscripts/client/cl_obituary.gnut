@@ -112,13 +112,14 @@ int starstreak10=0
 int laserstreak3=0
 int laserstreak6=0
 int laserstreak9=0
-int coldstreak=0
+int coldstreak10=0
 int explosivestreak3=0
 int explosivestreak6=0
 int explosivestreak10=0
 int sidearmstreak3=0
 int sidearmstreak6=0
 int sidearmstreak9=0
+int fragstreak1=0
 int fragstreak3=0
 int electricstreak3=0
 int pancake5=0
@@ -1305,7 +1306,7 @@ void function medalCall()
 	}
 	
 	//Short Killstreaks
-	if(fragstreak == 1 && fragstreak3 == 0)
+	if(fragstreak == 1 && fragstreak1 == 0)
 	{
 		fragstreak1=1
 		GetLocalClientPlayer().ClientCommand("playvideo fragstreak1_1 1 1; playvideo videofragstreak3 100 100; playvideo popup 1 1")
@@ -1639,6 +1640,7 @@ void function deathstreak()
 	sidearmstreak3=0
 	sidearmstreak6=0
 	sidearmstreak9=0
+	fragstreak1=0
 	fragstreak3=0
 	electricstreak3=0
 	meleestreak1=0
