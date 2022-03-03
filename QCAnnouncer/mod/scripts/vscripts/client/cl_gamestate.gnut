@@ -512,6 +512,7 @@ void function ClGameStateThink_Playing( entity player )
 		GetLocalClientPlayer().ClientCommand("alias countdown3_1 \"playvideo countdown3_1 1 1;\"")
 		GetLocalClientPlayer().ClientCommand("alias countdown10_1 \"playvideo countdown10_1 1 1;\"")
 		GetLocalClientPlayer().ClientCommand("alias countdown30_1 \"playvideo countdown30_1 1 1;\"")
+		GetLocalClientPlayer().ClientCommand("alias countdown1min_1 \"playvideo countdown1min_1 1 1;\"")
 		GetLocalClientPlayer().ClientCommand("alias countdown5min_1 \"playvideo countdown5min_1 1 1;\"")
 		GetLocalClientPlayer().ClientCommand("alias countdown10min_1 \"playvideo countdown10min_1 1 1;\"")
 		
@@ -535,8 +536,8 @@ void function ClGameStateThink_Playing( entity player )
 			GetLocalClientPlayer().ClientCommand("intro2")
 		else if(GAMETYPE==CAPTURE_THE_FLAG)
 			GetLocalClientPlayer().ClientCommand("intro3")
-		//else if(GAMETYPE==SPEEDBALL)
-			//GetLocalClientPlayer().ClientCommand("intro4")
+		else if(GAMETYPE==SPEEDBALL)
+			GetLocalClientPlayer().ClientCommand("intro4")
 		else if(GAMETYPE==MARKED_FOR_DEATH)
 			GetLocalClientPlayer().ClientCommand("intro5")
 		else if((GAMETYPE==LAST_TITAN_STANDING || GAMETYPE==SPEEDBALL || GAMETYPE==GAMEMODE_FASTBALL) && roundnumber <= 21)
@@ -578,22 +579,6 @@ void function ClGameStateThink_Playing( entity player )
 		{
 			GetLocalClientPlayer().ClientCommand("countdown10min_"+announcer)
 			tenmin=1
-		}
-	}
-	if ( endTime - Time() < 63.0 && GAMETYPE!=SPEEDBALL && GAMETYPE!=LAST_TITAN_STANDING && endTime - Time() > 58.0 )
-	{
-		if ( twomin==0 )
-		{
-			GetLocalClientPlayer().ClientCommand("countdown1min_"+announcer)
-			twomin=1
-		}
-	}
-	if ( endTime - Time() < 61.0 && GAMETYPE!=SPEEDBALL && GAMETYPE!=LAST_TITAN_STANDING && endTime - Time() > 58.0 )
-	{
-		if ( onemin==0 )
-		{
-			GetLocalClientPlayer().ClientCommand("countdown1min_"+announcer)
-			onemin=1
 		}
 	}
 	if ( endTime - Time() < 60.0 && GAMETYPE!=SPEEDBALL && GAMETYPE!=LAST_TITAN_STANDING && almostdone==0 )
