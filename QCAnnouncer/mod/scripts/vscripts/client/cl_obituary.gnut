@@ -147,6 +147,7 @@ int assiststreak9=0
 int infantrystreak10=0
 int infantrystreak20=0
 int infantrystreak30=0
+int headshotstreak1=0
 int headshotstreak3=0
 int headshotstreak6=0
 int headshotstreak9=0
@@ -1453,6 +1454,12 @@ void function medalCall()
 	}
 	
 	//Headshot Streak
+	if(headshot == 1 && headshotstreak1 == 0)
+	{
+		headshotstreak1=1
+		GetLocalClientPlayer().ClientCommand("playvideo headshotstreak1_1 1 1; playvideo videoheadshotstreak1 100 100; playvideo popup2 1 1")
+		wait 1.25
+	}
 	if(headshot >= 3 && headshotstreak3 == 0)
 	{
 		headshotstreak3=1
@@ -1670,6 +1677,7 @@ void function deathstreak()
 	infantrystreak20=0
 	infantrystreak30=0
 	headshot=0
+	headshotstreak1=0
 	headshotstreak3=0
 	headshotstreak6=0
 	headshotstreak9=0
@@ -1785,6 +1793,7 @@ void function aliasRegisterObit()
 	//GetLocalClientPlayer().ClientCommand("alias assiststreak6_1 \"playvideo assiststreak6_1 1 1; playvideo videoassiststreak6 100 100; playvideo popup3 1 1;\"")
 	//GetLocalClientPlayer().ClientCommand("alias assiststreak9_1 \"playvideo assiststreak9_1 1 1; playvideo videoassiststreak9 100 100; playvideo popup4 1 1;\"")
 
+	//GetLocalClientPlayer().ClientCommand("alias headshotstreak1_1 \"playvideo headshotstreak1_1 1 1; playvideo videoheadshotstreak1 100 100; playvideo popup2 1 1;\"")
 	//GetLocalClientPlayer().ClientCommand("alias headshotstreak3_1 \"playvideo headshotstreak3_1 1 1; playvideo videoheadshotstreak3 100 100; playvideo popup2 1 1;\"")
 	//GetLocalClientPlayer().ClientCommand("alias headshotstreak6_1 \"playvideo headshotstreak6_1 1 1; playvideo videoheadshotstreak6 100 100; playvideo popup3 1 1;\"")
 	//GetLocalClientPlayer().ClientCommand("alias headshotstreak9_1 \"playvideo headshotstreak9_1 1 1; playvideo videoheadshotstreak9 100 100; playvideo popup4 1 1;\"")
@@ -1942,7 +1951,7 @@ void function clusterCheck()
 void function annihilationCheck()
 {
 	wait 0.1
-	if(annihilation >= 3 && annihilation != 99)
+	if(annihilation >= 2 && annihilation != 99)
 	{
 		annihilation=99 
 		if(medalcallactive==0)
